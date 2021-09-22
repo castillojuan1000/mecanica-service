@@ -109,6 +109,10 @@ func getCustomers(w http.ResponseWriter, r *http.Request) {
 
 //get a customer
 func getCustomerById(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	params := mux.Vars(r)
 	id := params["id"]
 
@@ -124,6 +128,10 @@ func getCustomerById(w http.ResponseWriter, r *http.Request) {
 
 //get customer by phone number
 func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	params := mux.Vars(r)
 	firstName := params["firstName"]
 	lastName := params["lastName"]
@@ -143,6 +151,10 @@ func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
 }
 
 func getCustomerByPhoneNumber(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	params := mux.Vars(r)
 	phone := params["phone"]
 
@@ -180,6 +192,10 @@ func createCustomer(w http.ResponseWriter, r *http.Request) {
 
 //delete customer
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	params := mux.Vars(r)
 
 	var customer Customer
