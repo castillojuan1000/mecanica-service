@@ -74,24 +74,23 @@ func main() {
 
 	//customers
 	router.HandleFunc("/customers", getCustomers).Methods("GET", "OPTIONS")
-	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET") //and get their cars as well
+	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
 	router.HandleFunc("/create/customer", createCustomer).Methods("POST", "OPTIONS")
-	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE")
-	router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET")
-	router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET")
+	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
+	router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET", "OPTIONS")
 
 	//cars
-	router.HandleFunc("/cars", getCars).Methods("GET")
-	router.HandleFunc("/car/{id}", getCar).Methods("GET")
-	router.HandleFunc("/create/car", createCar).Methods("POST")
-	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE")
+	router.HandleFunc("/cars", getCars).Methods("GET", "OPTIONS")
+	router.HandleFunc("/car/{id}", getCar).Methods("GET", "OPTIONS")
+	router.HandleFunc("/create/car", createCar).Methods("POST", "OPTIONS")
+	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE", "OPTIONS")
 
 	//Maintanences
 	router.HandleFunc("/create/maintanence", createMaintanence).Methods("POST")
 	router.HandleFunc("/delete/maintanence", deleteMaintenance).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
-
 }
 
 //api controllers
@@ -192,15 +191,15 @@ func createCustomer(w http.ResponseWriter, r *http.Request) {
 
 //delete customer
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
 	//Allow CORS here By * or specific origin
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	params := mux.Vars(r)
-
 	var customer Customer
 	db.First(&customer, params["id"])
-	db.Delete(&customer)
+	db.Unscoped().Delete(&customer)
 
 	json.NewEncoder(w).Encode(&customer)
 }
