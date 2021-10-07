@@ -79,6 +79,7 @@ func main() {
 	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
 	router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
 	router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET", "OPTIONS")
+	router.HandleFunc("/update/customer/{id}", updateCustomer).Methods("PUT", "OPTIONS")
 
 	//cars
 	router.HandleFunc("/cars", getCars).Methods("GET", "OPTIONS")
@@ -202,6 +203,33 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 	db.Unscoped().Delete(&customer)
 
 	json.NewEncoder(w).Encode(&customer)
+}
+
+//edit customer
+func updateCustomer(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	var customer Customer
+	db.First(&customer, params["id"])
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&customer); err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := db.Save(&customer).Error; err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	json.NewEncoder(w).Encode(&customer)
+
 }
 
 //get cars
