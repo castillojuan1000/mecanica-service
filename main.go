@@ -74,11 +74,11 @@ func main() {
 
 	//customers
 	router.HandleFunc("/customers", getCustomers).Methods("GET", "OPTIONS")
-	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
+	// router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
 	router.HandleFunc("/create/customer", createCustomer).Methods("POST", "OPTIONS")
 	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
-	router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
-	router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET", "OPTIONS")
+	// router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
+	// router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET", "OPTIONS")
 	router.HandleFunc("/update/customer/{id}", updateCustomer).Methods("PUT", "OPTIONS")
 
 	//cars
@@ -94,13 +94,20 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
+func setupResponse(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
 //api controllers
 
 //get get all customers
 func getCustomers(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	var customers []Customer
 	db.Find(&customers)
@@ -108,74 +115,79 @@ func getCustomers(w http.ResponseWriter, r *http.Request) {
 }
 
 //get a customer
-func getCustomerById(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+// func getCustomerById(w http.ResponseWriter, r *http.Request) {
 
-	params := mux.Vars(r)
-	id := params["id"]
+// 	setupResponse(&w, r)
+// 	if (*r).Method == "OPTIONS" {
+// 		return
+// 	}
 
-	var customer Customer
-	var cars []Car
+// 	params := mux.Vars(r)
+// 	id := params["id"]
 
-	db.Where("id = ?", id).Find(&customer)
-	db.Model(&customer).Related(&cars)
+// 	var customer Customer
+// 	var cars []Car
 
-	customer.Cars = cars
-	json.NewEncoder(w).Encode(&customer)
-}
+// 	db.Where("id = ?", id).Find(&customer)
+// 	db.Model(&customer).Related(&cars)
 
-//get customer by phone number
-func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+// 	customer.Cars = cars
+// 	json.NewEncoder(w).Encode(&customer)
+// }
 
-	params := mux.Vars(r)
-	firstName := params["firstName"]
-	lastName := params["lastName"]
+// //get customer by phone number
+// func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
 
-	var customer Customer
-	// var car Car
-	var cars []Car
-	// var maintenances []Maintenance
+// 	setupResponse(&w, r)
+// 	if (*r).Method == "OPTIONS" {
+// 		return
+// 	}
 
-	db.Where("first_name = ? AND last_name = ?", firstName, lastName).Find(&customer)
-	db.Model(&customer).Related(&cars)
-	// db.Model(&car).Related(&maintenances)
+// 	params := mux.Vars(r)
+// 	firstName := params["firstName"]
+// 	lastName := params["lastName"]
 
-	// car.Maintenances = maintenances
-	customer.Cars = cars
-	json.NewEncoder(w).Encode(&customer)
-}
+// 	var customer Customer
+// 	// var car Car
+// 	var cars []Car
+// 	// var maintenances []Maintenance
 
-func getCustomerByPhoneNumber(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+// 	db.Where("first_name = ? AND last_name = ?", firstName, lastName).Find(&customer)
+// 	db.Model(&customer).Related(&cars)
+// 	// db.Model(&car).Related(&maintenances)
 
-	params := mux.Vars(r)
-	phone := params["phone"]
+// 	// car.Maintenances = maintenances
+// 	customer.Cars = cars
+// 	json.NewEncoder(w).Encode(&customer)
+// }
 
-	var customer Customer
-	var cars []Car
+// func getCustomerByPhoneNumber(w http.ResponseWriter, r *http.Request) {
+// 	//Allow CORS here By * or specific origin
+// 	w.Header().Set("Access-Control-Allow-Origin", "*")
+// 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	db.Where("phone = ?", phone).Find(&customer)
-	db.Model(&customer).Related(&cars)
+// 	params := mux.Vars(r)
+// 	phone := params["phone"]
 
-	fmt.Println("{}", customer)
-	customer.Cars = cars
-	json.NewEncoder(w).Encode(&customer)
-}
+// 	var customer Customer
+// 	var cars []Car
+
+// 	db.Where("phone = ?", phone).Find(&customer)
+// 	db.Model(&customer).Related(&cars)
+
+// 	fmt.Println("{}", customer)
+// 	customer.Cars = cars
+// 	json.NewEncoder(w).Encode(&customer)
+// }
 
 //create new customer
 func createCustomer(w http.ResponseWriter, r *http.Request) {
 	var customer Customer
 
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	json.NewDecoder(r.Body).Decode(&customer)
 
@@ -194,9 +206,10 @@ func createCustomer(w http.ResponseWriter, r *http.Request) {
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	var customer Customer
 	db.First(&customer, params["id"])
@@ -208,9 +221,13 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 //edit customer
 func updateCustomer(w http.ResponseWriter, r *http.Request) {
 	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
+	r.Close = true
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
 	var customer Customer
