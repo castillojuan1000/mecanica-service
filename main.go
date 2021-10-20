@@ -24,19 +24,20 @@ type Customer struct {
 type Car struct {
 	gorm.Model
 
-	Make         string
-	Modelo       string
-	Color        string
-	VinNumber    string `gorm:"typevarchar(100);unique_index"`
-	Maintenances []Maintenance
-	CustomerId   int
+	Make       string
+	Modelo     string
+	Color      string
+	VinNumber  string `gorm:"typevarchar(100);unique_index"`
+	Services   []Service
+	CustomerId int
 }
 
-type Maintenance struct {
+type Service struct {
 	gorm.Model
 
-	Note  string
-	CarId int
+	Comment string
+	Miles   string
+	CarId   int
 }
 
 var db *gorm.DB
@@ -68,7 +69,7 @@ func main() {
 	//Make migration to the db
 	db.AutoMigrate(&Customer{})
 	db.AutoMigrate(&Car{})
-	db.AutoMigrate(&Maintenance{})
+	db.AutoMigrate(&Service{})
 
 	//api routes
 	router := mux.NewRouter()
@@ -89,8 +90,8 @@ func main() {
 	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE", "OPTIONS")
 
 	//Maintanences
-	router.HandleFunc("/create/maintanence", createMaintanence).Methods("POST")
-	router.HandleFunc("/delete/maintanence", deleteMaintenance).Methods("DELETE")
+	router.HandleFunc("/create/maintanence", createService).Methods("POST")
+	router.HandleFunc("/delete/maintanence", deleteService).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -268,12 +269,12 @@ func getCars(w http.ResponseWriter, r *http.Request) {
 func getCar(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	var car Car
-	var maintenances []Maintenance
+	var services []Service
 
 	db.First(&car, params["id"])
-	db.Model(&car).Related(&maintenances)
+	db.Model(&car).Related(&services)
 
-	car.Maintenances = maintenances
+	car.Services = services
 	json.NewEncoder(w).Encode(&car)
 }
 
@@ -311,22 +312,22 @@ func deleteCar(w http.ResponseWriter, r *http.Request) {
 
 //Maintenance controllers
 
-//delete Maintenance
-func deleteMaintenance(w http.ResponseWriter, r *http.Request) {
+//delete Service
+func deleteService(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	var maintenance Maintenance
+	var service Service
 
-	db.First(&maintenance, id)
-	db.Delete(&maintenance)
+	db.First(&service, id)
+	db.Delete(&service)
 
-	json.NewEncoder(w).Encode(&maintenance)
+	json.NewEncoder(w).Encode(&service)
 }
 
-//create new maintanence
-func createMaintanence(w http.ResponseWriter, r *http.Request) {
-	var maintenance Maintenance
+//create new service
+func createService(w http.ResponseWriter, r *http.Request) {
+	var maintenance Service
 
 	json.NewDecoder(r.Body).Decode(&maintenance)
 	createdMaintanence := db.Create(&maintenance)
