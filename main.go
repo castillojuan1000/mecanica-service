@@ -26,6 +26,7 @@ type Car struct {
 
 	Make         string
 	Modelo       string
+	Color        string
 	VinNumber    string `gorm:"typevarchar(100);unique_index"`
 	Maintenances []Maintenance
 	CustomerId   int
@@ -74,7 +75,7 @@ func main() {
 
 	//customers
 	router.HandleFunc("/customers", getCustomers).Methods("GET", "OPTIONS")
-	// router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
+	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
 	router.HandleFunc("/create/customer", createCustomer).Methods("POST", "OPTIONS")
 	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
 	// router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
@@ -114,26 +115,26 @@ func getCustomers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&customers)
 }
 
-//get a customer
-// func getCustomerById(w http.ResponseWriter, r *http.Request) {
+// get a customer and cars
+func getCustomerById(w http.ResponseWriter, r *http.Request) {
 
-// 	setupResponse(&w, r)
-// 	if (*r).Method == "OPTIONS" {
-// 		return
-// 	}
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
-// 	params := mux.Vars(r)
-// 	id := params["id"]
+	params := mux.Vars(r)
+	id := params["id"]
 
-// 	var customer Customer
-// 	var cars []Car
+	var customer Customer
+	var cars []Car
 
-// 	db.Where("id = ?", id).Find(&customer)
-// 	db.Model(&customer).Related(&cars)
+	db.Where("id = ?", id).Find(&customer)
+	db.Model(&customer).Related(&cars)
 
-// 	customer.Cars = cars
-// 	json.NewEncoder(w).Encode(&customer)
-// }
+	customer.Cars = cars
+	json.NewEncoder(w).Encode(&customer)
+}
 
 // //get customer by phone number
 // func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
@@ -279,6 +280,11 @@ func getCar(w http.ResponseWriter, r *http.Request) {
 //create  a car
 func createCar(w http.ResponseWriter, r *http.Request) {
 	var car Car
+
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	json.NewDecoder(r.Body).Decode(&car)
 	createdCar := db.Create(&car)
