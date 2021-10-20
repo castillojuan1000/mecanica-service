@@ -253,6 +253,10 @@ func updateCustomer(w http.ResponseWriter, r *http.Request) {
 
 //get cars
 func getCars(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 	params := mux.Vars(r)
 
 	var customer Customer
