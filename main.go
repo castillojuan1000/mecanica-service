@@ -90,8 +90,8 @@ func main() {
 	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE", "OPTIONS")
 
 	//Maintanences
-	router.HandleFunc("/create/maintanence", createService).Methods("POST")
-	router.HandleFunc("/delete/maintanence", deleteService).Methods("DELETE")
+	router.HandleFunc("/create/service", createService).Methods("POST", "OPTIONS")
+	router.HandleFunc("/delete/service", deleteService).Methods("DELETE", "OPTIONS")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
@@ -327,6 +327,11 @@ func deleteService(w http.ResponseWriter, r *http.Request) {
 
 //create new service
 func createService(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	var maintenance Service
 
 	json.NewDecoder(r.Body).Decode(&maintenance)
