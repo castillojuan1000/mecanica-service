@@ -257,6 +257,7 @@ func getCars(w http.ResponseWriter, r *http.Request) {
 	if (*r).Method == "OPTIONS" {
 		return
 	}
+
 	params := mux.Vars(r)
 
 	var customer Customer
@@ -271,6 +272,10 @@ func getCars(w http.ResponseWriter, r *http.Request) {
 
 //get a car
 func getCar(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 	params := mux.Vars(r)
 	var car Car
 	var services []Service
@@ -305,6 +310,11 @@ func createCar(w http.ResponseWriter, r *http.Request) {
 
 //delete car
 func deleteCar(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	params := mux.Vars(r)
 
 	var car Car
