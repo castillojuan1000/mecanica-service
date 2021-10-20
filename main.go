@@ -319,7 +319,7 @@ func deleteCar(w http.ResponseWriter, r *http.Request) {
 
 	var car Car
 	db.First(&car, params["id"])
-	db.Delete(&car)
+	db.Unscoped().Delete(&car)
 
 	json.NewEncoder(w).Encode(&car)
 }
