@@ -90,8 +90,8 @@ func main() {
 	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE", "OPTIONS")
 
 	//Maintanences
-	router.HandleFunc("/create/service", createService).Methods("POST")
-	router.HandleFunc("/delete/service", deleteService).Methods("DELETE")
+	router.HandleFunc("/create/service", createService).Methods("POST", "OPTIONS")
+	router.HandleFunc("/delete/service", deleteService).Methods("DELETE", "OPTIONS")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
