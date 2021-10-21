@@ -18,7 +18,7 @@ type Customer struct {
 	FirstName string
 	LastName  string
 	Phone     string `gorm:"typevarchar(100);unique_index"`
-	Cars      []Car
+	Cars      []Car  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type Car struct {
@@ -27,8 +27,8 @@ type Car struct {
 	Make       string
 	Modelo     string
 	Color      string
-	VinNumber  string `gorm:"typevarchar(100);unique_index"`
-	Services   []Service
+	VinNumber  string    `gorm:"typevarchar(100);unique_index"`
+	Services   []Service `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	CustomerId int
 }
 
@@ -67,10 +67,11 @@ func main() {
 	defer db.Close()
 
 	//Make migration to the db
+	// db.Migrator().CreateConstraint(&Customer{}, "Cars")
+	// db.Migrator().CreateConstraint(&Car{}, "Services")
 	db.AutoMigrate(&Customer{})
 	db.AutoMigrate(&Car{})
 	db.AutoMigrate(&Service{})
-
 	//api routes
 	router := mux.NewRouter()
 
@@ -136,51 +137,6 @@ func getCustomerById(w http.ResponseWriter, r *http.Request) {
 	customer.Cars = cars
 	json.NewEncoder(w).Encode(&customer)
 }
-
-// //get customer by phone number
-// func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
-
-// 	setupResponse(&w, r)
-// 	if (*r).Method == "OPTIONS" {
-// 		return
-// 	}
-
-// 	params := mux.Vars(r)
-// 	firstName := params["firstName"]
-// 	lastName := params["lastName"]
-
-// 	var customer Customer
-// 	// var car Car
-// 	var cars []Car
-// 	// var maintenances []Maintenance
-
-// 	db.Where("first_name = ? AND last_name = ?", firstName, lastName).Find(&customer)
-// 	db.Model(&customer).Related(&cars)
-// 	// db.Model(&car).Related(&maintenances)
-
-// 	// car.Maintenances = maintenances
-// 	customer.Cars = cars
-// 	json.NewEncoder(w).Encode(&customer)
-// }
-
-// func getCustomerByPhoneNumber(w http.ResponseWriter, r *http.Request) {
-// 	//Allow CORS here By * or specific origin
-// 	w.Header().Set("Access-Control-Allow-Origin", "*")
-// 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-// 	params := mux.Vars(r)
-// 	phone := params["phone"]
-
-// 	var customer Customer
-// 	var cars []Car
-
-// 	db.Where("phone = ?", phone).Find(&customer)
-// 	db.Model(&customer).Related(&cars)
-
-// 	fmt.Println("{}", customer)
-// 	customer.Cars = cars
-// 	json.NewEncoder(w).Encode(&customer)
-// }
 
 //create new customer
 func createCustomer(w http.ResponseWriter, r *http.Request) {
@@ -319,8 +275,10 @@ func deleteCar(w http.ResponseWriter, r *http.Request) {
 
 	var car Car
 	db.First(&car, params["id"])
-	db.Unscoped().Delete(&car)
+	db.Select("Services").Unscoped().Delete(&car)
+	// db.Unscoped().Delete(&car)
 
+	// db.Exec(Alter table X...)
 	json.NewEncoder(w).Encode(&car)
 }
 
