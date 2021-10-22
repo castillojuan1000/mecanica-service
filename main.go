@@ -18,7 +18,7 @@ type Customer struct {
 	FirstName string
 	LastName  string
 	Phone     string `gorm:"typevarchar(100);unique_index"`
-	Cars      []Car  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Cars      []Car  `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type Car struct {
@@ -27,8 +27,8 @@ type Car struct {
 	Make       string
 	Modelo     string
 	Color      string
-	VinNumber  string    `gorm:"typevarchar(100);unique_index"`
-	Services   []Service `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	VinNumber  string     `gorm:"typevarchar(100);unique_index"`
+	Services   []*Service `gorm:"constraint:OnDelete:CASCADE;"`
 	CustomerId int
 }
 
@@ -171,7 +171,7 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 
 	var customer Customer
 	db.First(&customer, params["id"])
-	db.Unscoped().Delete(&customer)
+	db.Delete(&customer)
 
 	json.NewEncoder(w).Encode(&customer)
 }
@@ -234,7 +234,7 @@ func getCar(w http.ResponseWriter, r *http.Request) {
 	}
 	params := mux.Vars(r)
 	var car Car
-	var services []Service
+	var services []*Service
 
 	db.First(&car, params["id"])
 	db.Model(&car).Related(&services)
