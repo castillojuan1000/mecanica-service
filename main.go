@@ -55,7 +55,7 @@ func main() {
 	//connect to db postgres
 	dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
 
-	//openning connection to DB
+	// openning connection to DB
 	db, err = gorm.Open(dialect, dbURI)
 	if err != nil {
 		log.Fatal(err)
@@ -63,15 +63,17 @@ func main() {
 		fmt.Println("Succesfully connected to DB")
 	}
 
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	//close connection do db when main function finishes
 	defer db.Close()
 
 	//Make migration to the db
-	// db.Migrator().CreateConstraint(&Customer{}, "Cars")
-	// db.Migrator().CreateConstraint(&Car{}, "Services")
-	db.AutoMigrate(&Customer{})
-	db.AutoMigrate(&Car{})
-	db.AutoMigrate(&Service{})
+	db.Debug().AutoMigrate(&Customer{})
+	db.Debug().AutoMigrate(&Car{})
+	db.Debug().AutoMigrate(&Service{})
 	//api routes
 	router := mux.NewRouter()
 
@@ -80,8 +82,6 @@ func main() {
 	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
 	router.HandleFunc("/create/customer", createCustomer).Methods("POST", "OPTIONS")
 	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
-	// router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET", "OPTIONS")
-	// router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET", "OPTIONS")
 	router.HandleFunc("/update/customer/{id}", updateCustomer).Methods("PUT", "OPTIONS")
 
 	//cars
@@ -97,6 +97,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
+//Handle CORS
 func setupResponse(w *http.ResponseWriter, req *http.Request) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
@@ -170,10 +171,36 @@ func deleteCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var customer Customer
-	db.First(&customer, params["id"])
-	db.Delete(&customer)
+	var cars []Car
 
+	db.First(&customer, params["id"])
+	db.Model(&customer).Related(&cars)
+
+	deleteServicesSqlStatement := `
+		DELETE FROM services
+		WHERE car_id = $1;`
+
+	for i, car := range cars {
+		fmt.Println(i, car.ID)
+		err := db.Exec(deleteServicesSqlStatement, car.ID).Error
+		if err != nil {
+			fmt.Println(err)
+		}
+
+	}
+
+	DeleteCarsSqlStatement := `
+		DELETE FROM cars
+		WHERE customer_id = $1;`
+
+	err := db.Exec(DeleteCarsSqlStatement, params["id"]).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	db.Debug().Unscoped().Delete(&customer)
 	json.NewEncoder(w).Encode(&customer)
+
 }
 
 //edit customer
@@ -266,6 +293,7 @@ func createCar(w http.ResponseWriter, r *http.Request) {
 
 //delete car
 func deleteCar(w http.ResponseWriter, r *http.Request) {
+	//handle CORS
 	setupResponse(&w, r)
 	if (*r).Method == "OPTIONS" {
 		return
@@ -275,14 +303,20 @@ func deleteCar(w http.ResponseWriter, r *http.Request) {
 
 	var car Car
 	db.First(&car, params["id"])
-	db.Select("Services").Unscoped().Delete(&car)
-	// db.Unscoped().Delete(&car)
 
-	// db.Exec(Alter table X...)
+	sqlStatement := `
+		DELETE FROM services
+		WHERE car_id = $1;`
+
+	err := db.Exec(sqlStatement, params["id"]).Error
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	db.Debug().Unscoped().Delete(&car)
 	json.NewEncoder(w).Encode(&car)
 }
-
-//Maintenance controllers
 
 //delete Service
 func deleteService(w http.ResponseWriter, r *http.Request) {
