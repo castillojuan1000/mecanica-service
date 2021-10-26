@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joho/godotenv"
 )
 
 type Customer struct {
@@ -44,6 +45,12 @@ var db *gorm.DB
 var err error
 
 func main() {
+
+	e := godotenv.Load() //Load .env file
+	if e != nil {
+		fmt.Print(e)
+	}
+
 	//Loading env variables
 	dialect := os.Getenv("DIALECT")
 	// host := os.Getenv("HOST")
