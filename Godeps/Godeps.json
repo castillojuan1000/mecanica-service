@@ -1,0 +1,47 @@
+{
+	"ImportPath": "github.com/castillojuan1000/mecanica-service",
+	"GoVersion": "go1.15",
+	"GodepVersion": "v80",
+	"Deps": [
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Comment": "v1.8.0-1-gd07530f",
+			"Rev": "d07530f46e1eec4e40346e24af34dcc6750ad39f"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Comment": "v1.9.16-2-g466b344",
+			"Rev": "466b344ff5924029ad8426073ba5064093e18a22"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm/dialects/postgres",
+			"Comment": "v1.9.16-2-g466b344",
+			"Rev": "466b344ff5924029ad8426073ba5064093e18a22"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/inflection",
+			"Comment": "v1.0.0-9-gb528103",
+			"Rev": "b5281034e75ed100658f8d9d0b2837f3fad4e8b3"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "v1.9.0-4-g072e83d",
+			"Rev": "072e83d238c297c71cab11154695af301010031e"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/hstore",
+			"Comment": "v1.9.0-4-g072e83d",
+			"Rev": "072e83d238c297c71cab11154695af301010031e"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "v1.9.0-4-g072e83d",
+			"Rev": "072e83d238c297c71cab11154695af301010031e"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/scram",
+			"Comment": "v1.9.0-4-g072e83d",
+			"Rev": "072e83d238c297c71cab11154695af301010031e"
+		}
+	]
+}
