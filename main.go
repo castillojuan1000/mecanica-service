@@ -53,20 +53,20 @@ func main() {
 
 	//Loading env variables
 	dialect := os.Getenv("DIALECT")
-	// host := os.Getenv("HOST")
-	// dbPort := os.Getenv("DBPORT")
-	// user := os.Getenv("USER")
-	// dbName := os.Getenv("NAME")
-	// password := os.Getenv("PASSWORD")
+	host := os.Getenv("HOST")
+	dbPort := os.Getenv("DBPORT")
+	user := os.Getenv("USER")
+	dbName := os.Getenv("NAME")
+	password := os.Getenv("PASSWORD")
 
 	// retrieve the url from hereku
-	dbURLHeroku := os.Getenv("DATABASE_URL")
+	// dbURLHeroku := os.Getenv("DATABASE_URL")
 
 	//connect to db postgres
-	// dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
+	dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
 
 	// openning connection to DB
-	db, err = gorm.Open(dialect, dbURLHeroku)
+	db, err = gorm.Open(dialect, dbURI)
 	if err != nil {
 		log.Fatal(err)
 	} else {
