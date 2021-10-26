@@ -104,7 +104,21 @@ func main() {
 	router.HandleFunc("/create/service", createService).Methods("POST", "OPTIONS")
 	router.HandleFunc("/delete/service", deleteService).Methods("DELETE", "OPTIONS")
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	// get the port
+	port, err := getPort()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Fatal(http.ListenAndServe(port, router))
+}
+
+func getPort() (string, error) {
+	// the PORT is supplied by Heroku
+	port := os.Getenv("PORT")
+	if port == "" {
+		return "", fmt.Errorf("$PORT not set")
+	}
+	return ":" + port, nil
 }
 
 //Handle CORS
