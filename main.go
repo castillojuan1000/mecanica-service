@@ -18,24 +18,26 @@ type Customer struct {
 	FirstName string
 	LastName  string
 	Phone     string `gorm:"typevarchar(100);unique_index"`
-	Cars      []Car
+	Cars      []Car  `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type Car struct {
 	gorm.Model
 
-	Make         string
-	Modelo       string
-	VinNumber    string `gorm:"typevarchar(100);unique_index"`
-	Maintenances []Maintenance
-	CustomerId   int
+	Make       string
+	Modelo     string
+	Color      string
+	VinNumber  string     `gorm:"typevarchar(100);unique_index"`
+	Services   []*Service `gorm:"constraint:OnDelete:CASCADE;"`
+	CustomerId int
 }
 
-type Maintenance struct {
+type Service struct {
 	gorm.Model
 
-	Note  string
-	CarId int
+	Comment string
+	Miles   string
+	CarId   int
 }
 
 var db *gorm.DB
@@ -53,7 +55,7 @@ func main() {
 	//connect to db postgres
 	dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
 
-	//openning connection to DB
+	// openning connection to DB
 	db, err = gorm.Open(dialect, dbURI)
 	if err != nil {
 		log.Fatal(err)
@@ -61,57 +63,68 @@ func main() {
 		fmt.Println("Succesfully connected to DB")
 	}
 
+	if err != nil {
+		fmt.Println(err)
+	}
+
 	//close connection do db when main function finishes
 	defer db.Close()
 
 	//Make migration to the db
-	db.AutoMigrate(&Customer{})
-	db.AutoMigrate(&Car{})
-	db.AutoMigrate(&Maintenance{})
-
+	db.Debug().AutoMigrate(&Customer{})
+	db.Debug().AutoMigrate(&Car{})
+	db.Debug().AutoMigrate(&Service{})
 	//api routes
 	router := mux.NewRouter()
 
 	//customers
 	router.HandleFunc("/customers", getCustomers).Methods("GET", "OPTIONS")
-	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET") //and get their cars as well
+	router.HandleFunc("/customer/{id}", getCustomerById).Methods("GET", "OPTIONS") //and get their cars as well
 	router.HandleFunc("/create/customer", createCustomer).Methods("POST", "OPTIONS")
-	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE")
-	router.HandleFunc("/customers/{firstName}/{lastName}", getCustomerByFullName).Methods("GET")
-	router.HandleFunc("/customers/{phone}", getCustomerByPhoneNumber).Methods("GET")
+	router.HandleFunc("/delete/customer/{id}", deleteCustomer).Methods("DELETE", "OPTIONS")
+	router.HandleFunc("/update/customer/{id}", updateCustomer).Methods("PUT", "OPTIONS")
 
 	//cars
-	router.HandleFunc("/cars", getCars).Methods("GET")
-	router.HandleFunc("/car/{id}", getCar).Methods("GET")
-	router.HandleFunc("/create/car", createCar).Methods("POST")
-	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE")
+	router.HandleFunc("/cars", getCars).Methods("GET", "OPTIONS")
+	router.HandleFunc("/car/{id}", getCar).Methods("GET", "OPTIONS")
+	router.HandleFunc("/create/car", createCar).Methods("POST", "OPTIONS")
+	router.HandleFunc("/delete/car/{id}", deleteCar).Methods("DELETE", "OPTIONS")
 
 	//Maintanences
-	router.HandleFunc("/create/maintanence", createMaintanence).Methods("POST")
-	router.HandleFunc("/delete/maintanence", deleteMaintenance).Methods("DELETE")
+	router.HandleFunc("/create/service", createService).Methods("POST", "OPTIONS")
+	router.HandleFunc("/delete/service", deleteService).Methods("DELETE", "OPTIONS")
 
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
 
+//Handle CORS
+func setupResponse(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 }
 
 //api controllers
 
 //get get all customers
 func getCustomers(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	var customers []Customer
 	db.Find(&customers)
 	json.NewEncoder(w).Encode(&customers)
 }
 
-//get a customer
+// get a customer and cars
 func getCustomerById(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	params := mux.Vars(r)
 	id := params["id"]
@@ -126,56 +139,14 @@ func getCustomerById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&customer)
 }
 
-//get customer by phone number
-func getCustomerByFullName(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	params := mux.Vars(r)
-	firstName := params["firstName"]
-	lastName := params["lastName"]
-
-	var customer Customer
-	// var car Car
-	var cars []Car
-	// var maintenances []Maintenance
-
-	db.Where("first_name = ? AND last_name = ?", firstName, lastName).Find(&customer)
-	db.Model(&customer).Related(&cars)
-	// db.Model(&car).Related(&maintenances)
-
-	// car.Maintenances = maintenances
-	customer.Cars = cars
-	json.NewEncoder(w).Encode(&customer)
-}
-
-func getCustomerByPhoneNumber(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	params := mux.Vars(r)
-	phone := params["phone"]
-
-	var customer Customer
-	var cars []Car
-
-	db.Where("phone = ?", phone).Find(&customer)
-	db.Model(&customer).Related(&cars)
-
-	fmt.Println("{}", customer)
-	customer.Cars = cars
-	json.NewEncoder(w).Encode(&customer)
-}
-
 //create new customer
 func createCustomer(w http.ResponseWriter, r *http.Request) {
 	var customer Customer
 
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	json.NewDecoder(r.Body).Decode(&customer)
 
@@ -192,21 +163,84 @@ func createCustomer(w http.ResponseWriter, r *http.Request) {
 
 //delete customer
 func deleteCustomer(w http.ResponseWriter, r *http.Request) {
-	//Allow CORS here By * or specific origin
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
 	params := mux.Vars(r)
 
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
+	var customer Customer
+	var cars []Car
+
+	db.First(&customer, params["id"])
+	db.Model(&customer).Related(&cars)
+
+	deleteServicesSqlStatement := `
+		DELETE FROM services
+		WHERE car_id = $1;`
+
+	for i, car := range cars {
+		fmt.Println(i, car.ID)
+		err := db.Exec(deleteServicesSqlStatement, car.ID).Error
+		if err != nil {
+			fmt.Println(err)
+		}
+
+	}
+
+	DeleteCarsSqlStatement := `
+		DELETE FROM cars
+		WHERE customer_id = $1;`
+
+	err := db.Exec(DeleteCarsSqlStatement, params["id"]).Error
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	db.Debug().Unscoped().Delete(&customer)
+	json.NewEncoder(w).Encode(&customer)
+
+}
+
+//edit customer
+func updateCustomer(w http.ResponseWriter, r *http.Request) {
+	//Allow CORS here By * or specific origin
+
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
+	r.Close = true
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
 	var customer Customer
 	db.First(&customer, params["id"])
-	db.Delete(&customer)
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&customer); err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer r.Body.Close()
+
+	if err := db.Save(&customer).Error; err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	json.NewEncoder(w).Encode(&customer)
+
 }
 
 //get cars
 func getCars(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	params := mux.Vars(r)
 
 	var customer Customer
@@ -221,20 +255,29 @@ func getCars(w http.ResponseWriter, r *http.Request) {
 
 //get a car
 func getCar(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 	params := mux.Vars(r)
 	var car Car
-	var maintenances []Maintenance
+	var services []*Service
 
 	db.First(&car, params["id"])
-	db.Model(&car).Related(&maintenances)
+	db.Model(&car).Related(&services)
 
-	car.Maintenances = maintenances
+	car.Services = services
 	json.NewEncoder(w).Encode(&car)
 }
 
 //create  a car
 func createCar(w http.ResponseWriter, r *http.Request) {
 	var car Car
+
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	json.NewDecoder(r.Body).Decode(&car)
 	createdCar := db.Create(&car)
@@ -250,33 +293,52 @@ func createCar(w http.ResponseWriter, r *http.Request) {
 
 //delete car
 func deleteCar(w http.ResponseWriter, r *http.Request) {
+	//handle CORS
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	params := mux.Vars(r)
 
 	var car Car
 	db.First(&car, params["id"])
-	db.Delete(&car)
 
+	sqlStatement := `
+		DELETE FROM services
+		WHERE car_id = $1;`
+
+	err := db.Exec(sqlStatement, params["id"]).Error
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	db.Debug().Unscoped().Delete(&car)
 	json.NewEncoder(w).Encode(&car)
 }
 
-//Maintenance controllers
-
-//delete Maintenance
-func deleteMaintenance(w http.ResponseWriter, r *http.Request) {
+//delete Service
+func deleteService(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	var maintenance Maintenance
+	var service Service
 
-	db.First(&maintenance, id)
-	db.Delete(&maintenance)
+	db.First(&service, id)
+	db.Delete(&service)
 
-	json.NewEncoder(w).Encode(&maintenance)
+	json.NewEncoder(w).Encode(&service)
 }
 
-//create new maintanence
-func createMaintanence(w http.ResponseWriter, r *http.Request) {
-	var maintenance Maintenance
+//create new service
+func createService(w http.ResponseWriter, r *http.Request) {
+	setupResponse(&w, r)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
+	var maintenance Service
 
 	json.NewDecoder(r.Body).Decode(&maintenance)
 	createdMaintanence := db.Create(&maintenance)
