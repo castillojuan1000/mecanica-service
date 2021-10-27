@@ -11,7 +11,6 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
-	"github.com/lib/pq"
 )
 
 type Customer struct {
@@ -62,14 +61,14 @@ func main() {
 
 	// retrieve the url from hereku
 	url := os.Getenv("DATABASE_URL")
-	connection, _ := pq.ParseURL(url)
-	connection += " sslmode=require"
+	// connection, _ := pq.ParseURL(url)
+	// connection += " sslmode=require"
 
 	//connect to db postgres
 	// dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
 
 	// openning connection to DB
-	db, err = gorm.Open(dialect, connection)
+	db, err = gorm.Open(dialect, url)
 	if err != nil {
 		log.Fatal(err)
 	} else {
