@@ -30,7 +30,7 @@ type Car struct {
 	Color      string
 	VinNumber  string     `gorm:"typevarchar(100);unique_index"`
 	Services   []*Service `gorm:"constraint:OnDelete:CASCADE;"`
-	CustomerId int
+	CustomerId uint
 }
 
 type Service struct {
@@ -38,7 +38,7 @@ type Service struct {
 
 	Comment string
 	Miles   string
-	CarId   int
+	CarId   uint
 }
 
 var db *gorm.DB
